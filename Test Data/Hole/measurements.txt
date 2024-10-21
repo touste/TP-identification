@@ -1,0 +1,5 @@
+width = 41mm
+initial clamp-to-clamp distance = 75mm
+hole diameter = 7.2mm
+ring_diameter = 25mm
+thickness = 1mm

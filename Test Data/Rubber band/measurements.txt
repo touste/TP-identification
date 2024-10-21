@@ -1,0 +1,3 @@
+width = 40mm
+initial clamp-to-clamp distance = 64mm
+thickness = 1mm
