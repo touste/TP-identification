@@ -1,13 +1,9 @@
 import numpy as np
-
 import gmsh
-
-import IPython.display as display
 
 
 def commas_to_dots(x):
     return x.replace(',', '.').encode()
-
 
 
 def extract_data_from_tensile_test(file, segment_number='all', tare=False):
@@ -57,25 +53,43 @@ def extract_data_from_tensile_test(file, segment_number='all', tare=False):
     return displacement, force, time
 
 
+import scipy.io
+def read_mat_data(file):
+    """
+    Reads Matlab .mat file.
+
+    Parameters:
+    file (str): Path to the .mat file.
+
+    Returns:
+    dict: Dictionary containing the data from the .mat file.
+    """
+    data = scipy.io.loadmat(file)
+    # Remove rows and columns with only 0 and replace 0 with NaN
+    for field in data:
+        data[field] = data[field][~np.all(data[field] == 0, axis=1)]
+        data[field] = data[field][:, ~np.all(data[field] == 0, axis=0)]
+        data[field][data[field] == 0] = np.nan
+    return data
 
 
-def mesh_plate_hole(width, height, hole_diameter, ring_diameter, mesh_size = None, outfile="Images/plate_with_hole.mp4"):
+def mesh_plate_hole(length_x, length_y, hole_diameter, ring_diameter, mesh_size = None):
     """
     Creates a mesh of a plate with a hole in the center.
 
     Parameters:
-    width (float): Width of the plate.
-    height (float): Height of the plate.
+    length_x (float): Dimension of the plate in the x direction.
+    length_y (float): Dimension of the plate in the y direction.
     hole_diameter (float): Diameter of the hole.
     ring_diameter (float): Diameter of the ring.
-    mesh_size (float, optional): Mesh size. Defaults to width / 10.
+    mesh_size (float, optional): Mesh size. Defaults to min(length_x, length_y) / 10.
 
     Returns:
     gmsh.model: The Gmsh model.
     """
 
     if mesh_size is None:
-        mesh_size = width / 10
+        mesh_size = min(length_x, length_y) / 10
 
     gmsh.initialize()
 
@@ -84,13 +98,13 @@ def mesh_plate_hole(width, height, hole_diameter, ring_diameter, mesh_size = Non
 
     gmsh.model.add('plate_with_hole')
     # Create the plate
-    plate = gmsh.model.occ.addRectangle(0, 0, 0, width, height)
+    plate = gmsh.model.occ.addRectangle(0, 0, 0, length_x, length_y)
     # Create the hole
-    hole = gmsh.model.occ.addDisk(width / 2, height / 2, 0, hole_diameter / 2, hole_diameter / 2)
+    hole = gmsh.model.occ.addDisk(length_x / 2, length_y / 2, 0, hole_diameter / 2, hole_diameter / 2)
     # Remove the hole from the plate
     plate_with_hole = gmsh.model.occ.cut([(2, plate)], [(2, hole)])
     # Create the ring
-    ring = gmsh.model.occ.addCircle(width / 2, height / 2, 0, ring_diameter / 2)
+    ring = gmsh.model.occ.addCircle(length_x / 2, length_y / 2, 0, ring_diameter / 2)
     # Fragment the plate with the ring
     plate_with_hole_with_ring = gmsh.model.occ.fragment([(2, 1)], [(1, ring)])
     # Synchronize the model
@@ -100,29 +114,11 @@ def mesh_plate_hole(width, height, hole_diameter, ring_diameter, mesh_size = Non
     gmsh.model.addPhysicalGroup(2, [2], 2)
     # Create the mesh
     gmsh.model.mesh.setSize(gmsh.model.getEntities(0), mesh_size)
-    gmsh.option.setNumber('Mesh.ElementOrder', 2)
+    gmsh.option.setNumber('Mesh.ElementOrder', 2) # Quadratic elements
     gmsh.model.mesh.generate(2)
     return gmsh.model
 
-import scipy.io
-def read_mat_data(file, field):
-    """
-    Reads Matlab .mat file.
 
-    Parameters:
-    file (str): Path to the .mat file.
-    field (str): Field to read from the .mat file.
-
-    Returns:
-    dict: Dictionary containing the data from the .mat file.
-    """
-    data = scipy.io.loadmat(file)
-    if field not in data:
-        raise ValueError(f"Field '{field}' not found in file '{file}'.")
-    # Remove rows and columns with only 0
-    data[field] = data[field][~np.all(data[field] == 0, axis=1)]
-    data[field] = data[field][:, ~np.all(data[field] == 0, axis=0)]
-    return data[field]
     
 
 
@@ -139,66 +135,68 @@ from mpi4py import MPI
 
 comm = MPI.COMM_WORLD
 
+def find_nearest(array, value):     
+    array = np.asarray(array)    
+    idx = (np.abs(array - value)).argmin()    
+    return idx
+
 
 class FEModel:
 
-    def __init__(self, width, height, thickness, hole_diameter, ring_diameter, SEF="Neo-Hookean", mesh_size=None):
+    def __init__(self, axial_length, transverse_length, thickness, hole_diameter, ring_diameter, SEF="Neo-Hookean", mesh_size=None):
         """
         Initializes a finite element simulation of a plate with a hole in the center.
 
         Parameters:
-        width (float): Width of the plate.
-        height (float): Height of the plate.
+        axial_length (float): Length of the plate in the tension direction.
+        transverse_length (float): Length of the plate in the transverse direction.
         thickness (float): Thickness of the plate.
         hole_diameter (float): Diameter of the hole.
         ring_diameter (float): Diameter of the ring.
         SEF (str, optional): Strain energy function. Defaults to "Neo-Hookean". Can be one of "Neo-Hookean" or "Mooney-Rivlin".
-        mesh_size (float, optional): Mesh size. Defaults to width / 10.
+        mesh_size (float, optional): Mesh size.
         
         """
 
-        if mesh_size is None:
-            mesh_size = width / 10
-
         # Create and import the mesh
-        model = mesh_plate_hole(width, height, hole_diameter, ring_diameter, mesh_size)
+        model = mesh_plate_hole(axial_length, transverse_length, hole_diameter, ring_diameter, mesh_size)
         domain, cell_tags, facet_tags = model_to_mesh(model, comm, rank=0, gdim=2)
 
         # Define the function space for the displacement field
         V = fem.functionspace(domain, ("Lagrange", 2, (domain.geometry.dim, )))
 
         # Define the boundary conditions
-        def top(x):
-            return np.isclose(x[1], height)
+        def right(x):
+            return np.isclose(x[0], axial_length)
 
-        def bottom(x):
-            return np.isclose(x[1], 0.)
+        def left(x):
+            return np.isclose(x[0], 0.)
         
         fdim = domain.topology.dim - 1 # Facet dimension
 
-        # Locate dofs on the bottom boundary
-        bot_facets = mesh.locate_entities_boundary(domain, fdim, bottom)
-        u_dofs_bot = fem.locate_dofs_topological(V, fdim, bot_facets)
-        # ux = uy = 0 on the bottom boundary
-        bc_bot = fem.dirichletbc(np.array([0, 0], dtype=default_scalar_type), u_dofs_bot, V)
+        # Locate dofs on the left
+        facets_left = mesh.locate_entities_boundary(domain, fdim, left)
+        u_dofs_left = fem.locate_dofs_topological(V, fdim, facets_left)
+        # ux = uy = 0 on the left boundary
+        bc_left = fem.dirichletbc(np.array([0, 0], dtype=default_scalar_type), u_dofs_left, V)
 
-        # Locate dofs on the top boundary
-        facets_top = mesh.locate_entities_boundary(domain, fdim, top)
-        uy_dofs_top = fem.locate_dofs_topological(V.sub(1), fdim, facets_top)
+        # Locate dofs on the right
+        facets_right = mesh.locate_entities_boundary(domain, fdim, right)
+        ux_dofs_right = fem.locate_dofs_topological(V.sub(0), fdim, facets_right)
         dispBC = fem.Constant(domain, 0.)
-        # uy = dispBC on the top boundary
-        bc_uy_top = fem.dirichletbc(dispBC, uy_dofs_top, V.sub(1))
-        # ux = 0 on the top boundary
-        ux_dofs_top = fem.locate_dofs_topological(V.sub(0), fdim, facets_top)
-        bc_ux_top = fem.dirichletbc(0., ux_dofs_top, V.sub(0))
+        # ux = dispBC on the right boundary
+        bc_ux_right = fem.dirichletbc(dispBC, ux_dofs_right, V.sub(0))
+        # uy = 0 on the right boundary
+        uy_dofs_right = fem.locate_dofs_topological(V.sub(1), fdim, facets_right)
+        bc_uy_right = fem.dirichletbc(0., uy_dofs_right, V.sub(1))
 
-        bcs = [bc_bot, bc_uy_top, bc_ux_top]
+        bcs = [bc_left, bc_ux_right, bc_uy_right]
 
         # To be used to compute the reaction force
         u_reac = fem.Function(V)
-        uy_dofs_bot = fem.locate_dofs_topological(V.sub(1), fdim, bot_facets)
-        bc_uy_bot = fem.dirichletbc(fem.Constant(domain, 1.), uy_dofs_bot, V.sub(1))
-        fem.set_bc(u_reac.x.array, [bc_uy_bot])
+        ux_dofs_left = fem.locate_dofs_topological(V.sub(0), fdim, facets_left)
+        bc_ux_left = fem.dirichletbc(fem.Constant(domain, 1.), ux_dofs_left, V.sub(0))
+        fem.set_bc(u_reac.x.array, [bc_ux_left])
 
         # Displacement field and test function
         u = fem.Function(V)
@@ -271,7 +269,7 @@ class FEModel:
 
         # Compute the axial strain field
         Vs = fem.functionspace(domain, ("DG", 0))
-        axial_strain_expr = fem.Expression(E_GL[1,1], Vs.element.interpolation_points())
+        axial_strain_expr = fem.Expression(E_GL[0,0], Vs.element.interpolation_points())
         axial_strain_fun = fem.Function(Vs)
         axial_strain_fun.interpolate(axial_strain_expr)
 
@@ -303,7 +301,6 @@ class FEModel:
         """
         self.mat_params["C1"].x.array[self.cells_1] = np.full_like(self.cells_1, C1_rubber, dtype=default_scalar_type)
         self.mat_params["C1"].x.array[self.cells_2] = np.full_like(self.cells_2, C1_ring, dtype=default_scalar_type)
-        self.reset_fe_model()
 
     def set_material_parameters_MR(self, C1_rubber, C1_ring, C2_rubber, C2_ring):
         """
@@ -319,16 +316,6 @@ class FEModel:
         self.mat_params["C1"].x.array[self.cells_2] = np.full_like(self.cells_2, C1_ring, dtype=default_scalar_type)
         self.mat_params["C2"].x.array[self.cells_1] = np.full_like(self.cells_1, C2_rubber, dtype=default_scalar_type)
         self.mat_params["C2"].x.array[self.cells_2] = np.full_like(self.cells_2, C2_ring, dtype=default_scalar_type)
-        self.reset_fe_model()
-        
-
-    def reset_fe_model(self):
-        """
-        Resets the finite element model to the initial state.
-        """
-        self.u.x.array[:] = 0
-        self.u.x.scatter_forward()
-        self.axial_strain_fun.interpolate(self.axial_strain_expr)
 
 
     def init_plot(self, movie_file=None):
@@ -341,19 +328,17 @@ class FEModel:
 
         # Extract the mesh
         topology, cells, geometry = plot.vtk_mesh(self.V)
+
+        # Create reference and deformed function grids
         reference_function_grid = pyvista.UnstructuredGrid(topology, cells, geometry)
+        deformed_function_grid = reference_function_grid.copy()
 
         # Add the displacement field
-        values = np.zeros((geometry.shape[0], 3))
-        values[:, :2] = self.u.x.array.reshape(-1, 2)
-        reference_function_grid["u"] = values
-
-        # Warp mesh by displacement
-        deformed_function_grid = reference_function_grid.warp_by_vector("u", factor=1)
+        deformed_function_grid["u"] = np.zeros((geometry.shape[0], 3))
+        deformed_function_grid.set_active_vectors("u")
 
         # Add the axial strain field
-        deformed_function_grid.set_active_vectors("u")
-        deformed_function_grid["axial_strain"] = self.axial_strain_fun.x.array
+        deformed_function_grid["axial_strain"] = np.zeros_like(self.axial_strain_fun.x.array)
         deformed_function_grid.set_active_scalars("axial_strain")
 
         # Create the plotter
@@ -361,8 +346,9 @@ class FEModel:
         if movie_file is not None: plotter.open_movie(movie_file, framerate=10)
         plotter.add_mesh(deformed_function_grid, scalars = "axial_strain", show_edges=True, edge_opacity=0.2, lighting=False, scalar_bar_args={"title": "Axial strain [-]"})
         plotter.enable_parallel_projection()
-        plotter.enable_2d_style()
-        plotter.view_yx()
+        plotter.enable_terrain_style() # To disable mouse wheel zoom
+        
+        plotter.camera.tight(padding=0.1, adjust_render_window=False, view='xy')
 
         viewer = plotter.show(jupyter_backend="trame", return_viewer=True)
 
@@ -370,44 +356,45 @@ class FEModel:
         self.deformed_function_grid = deformed_function_grid
         self.plotter = plotter
         self.movie_file = movie_file
+        self.saved_u = []
+        self.saved_e = []
 
         return viewer
     
-    def update_plot(self):
-        """
-        Updates the plot.
-        """
 
-        # Update the displacement field
-        self.reference_function_grid["u"][:, :2] = self.u.x.array.reshape(-1, 2)
-        self.axial_strain_fun.interpolate(self.axial_strain_expr)
+    def display_timestep(self, n):
 
-        # Warp mesh by displacement
-        self.deformed_function_grid.points[:, :] = self.reference_function_grid.warp_by_vector(factor=1).points
+        current_u = self.saved_u[n]
+        current_e = self.saved_e[n]
+
+        # Warp mesh
+        self.deformed_function_grid.points[:, :2] = self.reference_function_grid.points[:, :2] + current_u.reshape(-1, 2)
 
         # Update the axial strain field
-        self.axial_strain_fun.interpolate(self.axial_strain_expr)
-        self.deformed_function_grid.cell_data["axial_strain"][:] = self.axial_strain_fun.x.array
-
-        # Update the plot limits
-        self.plotter.view_yx()
-
-        self.plotter.update()
-
-        if self.movie_file is not None:
-            self.plotter.write_frame()
+        self.deformed_function_grid.cell_data["axial_strain"][:] = current_e
 
 
-    def solve(self, disp_values, show_progress=True, update_plot=True):
+    def solve(self, disp_values, show_progress=True, show_plot=True):
         """
         Solves the finite element problem for a series of displacement values.
 
         Parameters:
         disp_values (numpy.ndarray): Displacement values to apply.
+        show_progress (bool, optional): If True, the progress will be displayed in the terminal. Defaults to True.
+        show_plot (bool, optional): If True, the plot will be displayed. Defaults to True.
 
         Returns:
         numpy.ndarray: Model forces.
         """
+
+        self.u.x.array[:] = 0
+        self.u.x.scatter_forward()
+        self.axial_strain_fun.x.array[:] = 0
+        self.axial_strain_fun.x.scatter_forward()
+
+        if self.plotter is not None and show_plot:
+            self.saved_u = [np.zeros_like(self.u.x.array) for _ in range(len(disp_values))]
+            self.saved_e = [np.zeros_like(self.axial_strain_fun.x.array) for _ in range(len(disp_values))]
 
         model_forces = np.nan*np.zeros(len(disp_values))
 
@@ -420,13 +407,32 @@ class FEModel:
             if show_progress:
                 print(f"Increment {n}: Displacement: {d:.2f} mm, Force: {model_forces[n]:.2f} N")
 
-            if update_plot and self.plotter is not None:
-                self.update_plot()
+            if self.plotter is not None and show_plot:
+                self.axial_strain_fun.interpolate(self.axial_strain_expr)
+                self.saved_u[n][:] = self.u.x.array
+                self.saved_e[n][:] = self.axial_strain_fun.x.array
+                if self.movie_file is not None:
+                    self.plotter.write_frame()
+
+
+        if self.plotter is not None and show_plot:
+            self.plotter.add_slider_widget(
+                callback=lambda value: self.display_timestep(find_nearest(disp_values, value)),
+                rng=(disp_values[0], disp_values[-1]),
+                value=disp_values[-1],
+                title="Displacement BC [mm]",
+                fmt="%.1f",
+                style="modern",
+                interaction_event="always",
+            )
+            self.plotter.camera.tight(padding=0.1, adjust_render_window=False, view='xy')
+            self.plotter.update_scalar_bar_range([np.min(self.saved_e[-1]), np.max(self.saved_e[-1])])
+            self.plotter.update()
 
         return model_forces
 
 
-    def get_strain_field_on_undeformed_mesh(self):
+    def get_fields_on_undeformed_mesh(self):
         """
         Returns the strain field on the undeformed mesh.
 
@@ -435,42 +441,57 @@ class FEModel:
         """
         self.axial_strain_fun.interpolate(self.axial_strain_expr)
         self.reference_function_grid["axial_strain"] = self.axial_strain_fun.x.array
+        self.reference_function_grid["u"] = self.u.x.array.reshape(-1, 2)[:,0]
+        self.reference_function_grid["v"] = self.u.x.array.reshape(-1, 2)[:,1]
         return self.reference_function_grid
         
 
 
 
-def plot_fields_side_by_side(exp_field, num_field, image_file=None):
+def plot_fields_side_by_side(exp_fields, exp_fieldname, num_fields, num_fieldname, scalar_bar_title, px_to_mm_scale=1., common_clim=None, image_file=None):
     """
     Plots two fields side by side.
 
     Parameters:
-    exp_field (numpy.ndarray): The experimental field as a 2D numpy array.
-    num_field (pyvista.UnstructuredGrid): The numerical field.
+    exp_fields (dict): The experimental fields as a dictionary.
+    exp_fieldname (str): Field name to extract from the experimental fields.
+    num_fields (pyvista.UnstructuredGrid): The numerical fields as a pyvista mesh.
+    num_fieldname (str): Field name to extract from the numerical fields.
+    scalar_bar_title (str): Title for the scalar bar.
+    px_to_mm_scale (float, optional): Scale factor to convert pixels to mm if the experimental fields are in pixels. Defaults to 1.
+    common_clim (list, optional): Common color limits for the two fields. Defaults to mean +/- 3*std of the experimental field.
     image_file (str, optional): Output file for the figure. Defaults to None.
 
     """
 
     plotter = pyvista.Plotter(shape=(2, 1), notebook=True)
 
-    common_clim = [np.min(exp_field), 0.5*np.max(exp_field)]
+    if exp_fieldname not in exp_fields:
+        raise ValueError(f"Field '{exp_fieldname}' not found in 'exp_fields'.")
+    
+    exp_field = exp_fields[exp_fieldname]*px_to_mm_scale
+
+    if common_clim is None:
+        common_clim = [np.nanmean(exp_field) - 3*np.nanstd(exp_field), np.nanmean(exp_field) + 3*np.nanstd(exp_field)]
+
 
     # Experimental field
     plotter.subplot(0, 0)
     imdata = pyvista.ImageData(dimensions=(exp_field.shape[1], exp_field.shape[0], 1))
     imdata.point_data["axial_strain"] = exp_field.ravel(order="C")
-    plotter.add_mesh(imdata, scalars="axial_strain", lighting=False, clim=common_clim, scalar_bar_args={"title": "Experimental axial strain [-]"})
+    plotter.add_mesh(imdata, scalars="axial_strain", lighting=False, clim=common_clim, nan_opacity=0, scalar_bar_args={"title": f"Experimental {scalar_bar_title}"})
     plotter.view_xy()
-    # Temp fix for zoom not working
-    plotter.camera.position = (plotter.camera.position[0], plotter.camera.position[1], plotter.camera.position[2]/2)
+    plotter.enable_parallel_projection()
+    plotter.enable_terrain_style() # To disable mouse wheel zoom
+    plotter.camera.tight(adjust_render_window=False, view='xy')
 
     # Numerical field
     plotter.subplot(1, 0)
-    num_field.rotate_z(-90, inplace=True)
-    plotter.add_mesh(num_field, scalars="axial_strain", lighting=False, clim=common_clim, scalar_bar_args={"title": "FE axial strain [-]"})
+    plotter.add_mesh(num_fields, scalars=num_fieldname, lighting=False, clim=common_clim, scalar_bar_args={"title": f"FE {scalar_bar_title}"})
     plotter.view_xy()
-    # Temp fix for zoom not working
-    plotter.camera.position = (plotter.camera.position[0], plotter.camera.position[1], plotter.camera.position[2]/2)
+    plotter.enable_parallel_projection()
+    plotter.enable_terrain_style() # To disable mouse wheel zoom
+    plotter.camera.tight(adjust_render_window=False, view='xy')
 
     if image_file is not None: plotter.screenshot(image_file)  
 
