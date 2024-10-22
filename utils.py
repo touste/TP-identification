@@ -130,7 +130,6 @@ from dolfinx.nls.petsc import NewtonSolver
 import ufl
 import numpy as np
 import pyvista
-pyvista.global_theme.trame.jupyter_extension_enabled = True
 
 from mpi4py import MPI
 

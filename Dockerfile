@@ -1,12 +1,6 @@
 # Adapted from https://github.com/jorgensd/dolfinx-tutorial/blob/main/Dockerfile
 FROM ghcr.io/jorgensd/dolfinx-tutorial:release
 
-# RUN apt-get update && apt-get upgrade -y && apt-get install -y \
-#     libglx-mesa0 \
-#     libgl1 \
-#     xvfb \
-#     x11-xserver-utils
-
 # Install vtk for offscreen rendering
 RUN pip uninstall vtk -y
 RUN pip install --no-cache-dir --extra-index-url https://wheels.vtk.org vtk-osmesa
