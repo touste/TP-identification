@@ -1,6 +1,12 @@
 # Adapted from https://github.com/jorgensd/dolfinx-tutorial/blob/main/Dockerfile
 FROM ghcr.io/jorgensd/dolfinx-tutorial:release
 
+RUN apt update && apt upgrade -y && apt install -y \
+    libglx-mesa0 \
+    libgl1 \
+    xvfb \
+    x11-xserver-utils
+
 # Override from base image      
 ENV PYVISTA_JUPYTER_BACKEND="html"
 
