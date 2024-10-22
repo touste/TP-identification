@@ -1,4 +1,4 @@
-# From https://github.com/jorgensd/dolfinx-tutorial/blob/main/Dockerfile
+# Adapted from https://github.com/jorgensd/dolfinx-tutorial/blob/main/Dockerfile
 FROM ghcr.io/jorgensd/dolfinx-tutorial:release
 
 # Override from base image      
