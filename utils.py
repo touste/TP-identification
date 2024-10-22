@@ -131,8 +131,6 @@ import ufl
 import numpy as np
 import pyvista
 
-# If we're running headless, we need to start a virtual display
-pyvista.start_xvfb()
 
 from mpi4py import MPI
 

@@ -1,7 +1,7 @@
 # Adapted from https://github.com/jorgensd/dolfinx-tutorial/blob/main/Dockerfile
 FROM ghcr.io/jorgensd/dolfinx-tutorial:release
 
-RUN apt update && apt upgrade -y && apt install -y \
+RUN apt-get update && apt-get upgrade -y && apt-get install -y \
     libglx-mesa0 \
     libgl1 \
     xvfb \
