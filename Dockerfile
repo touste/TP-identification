@@ -3,7 +3,8 @@ FROM ghcr.io/jorgensd/dolfinx-tutorial:release
 
 # Install vtk for offscreen rendering
 RUN pip uninstall vtk -y
-RUN pip install --no-cache-dir --extra-index-url https://wheels.vtk.org vtk-osmesa
+#RUN pip install --no-cache-dir --extra-index-url https://wheels.vtk.org vtk-osmesa
+RUN pip install --no-cache-dir --extra-index-url https://wheels.vtk.org vtk-egl
 
 # Install other dependencies
 COPY requirements.txt /tmp/
