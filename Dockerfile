@@ -11,8 +11,15 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y \
 ENV PYVISTA_JUPYTER_BACKEND="html"
 
 # Install Python dependencies
+RUN pip uninstall vtk -y
+RUN pip install --no-cache-dir --extra-index-url https://wheels.vtk.org vtk-osmesa
 COPY requirements.txt /tmp/
 RUN pip install --no-cache-dir -r /tmp/requirements.txt
+
+# allow jupyterlab for ipyvtk
+ENV JUPYTER_ENABLE_LAB=yes
+ENV PYVISTA_TRAME_SERVER_PROXY_PREFIX='/proxy/'
+
 
 # create user with a home directory
 ARG NB_USER=jovyan
