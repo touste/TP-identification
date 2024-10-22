@@ -10,7 +10,7 @@ RUN pip install --no-cache-dir -r /tmp/requirements.txt
 
 # create user with a home directory
 ARG NB_USER=jovyan
-ARG NB_UID=1000
+ARG NB_UID=1010
 ENV USER ${NB_USER}
 ENV NB_UID ${NB_UID}
 ENV HOME /home/${NB_USER}
