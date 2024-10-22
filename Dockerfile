@@ -1,6 +1,9 @@
 # From https://github.com/jorgensd/dolfinx-tutorial/blob/main/Dockerfile
 FROM ghcr.io/jorgensd/dolfinx-tutorial:v0.8.0
 
+# Override from base image
+ENV PYVISTA_JUPYTER_BACKEND="html"
+
 # Install Python dependencies
 COPY requirements.txt /tmp/
 RUN pip install --no-cache-dir -r /tmp/requirements.txt
