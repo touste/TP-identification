@@ -23,10 +23,9 @@ RUN adduser --disabled-password \
     --uid ${NB_UID} \
     ${NB_USER}
 
-# Make sure the contents of our repo are in ${HOME}
-COPY . ${HOME}
-USER root
-RUN chown -R ${NB_UID} ${HOME}
+# Copy home directory for usage in binder
+WORKDIR ${HOME}
+COPY --chown=${NB_UID} . ${HOME}
 
 USER ${NB_USER} 
 ENTRYPOINT []

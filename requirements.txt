@@ -1,4 +1,1 @@
-notebook
-jupyterlab
-jupyterhub
 scienceplots
