@@ -1,3 +1,4 @@
 scienceplots
 scipy
 ipympl
+trame_jupyter_extension
