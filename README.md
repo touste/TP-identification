@@ -19,7 +19,7 @@ You can open the Notebook in Binder here, all dependencies are taken care of in 
 
 You can open the repository in GitHub Codespaces.
 
->Note: you need to have a GitHub account and Codespaces enabled. 
+>Note: you need to have a GitHub account and Codespaces enabled. Prefer opening the repository in JupyterLab for a better experience.
 
 ### VS Code Dev Container
 
