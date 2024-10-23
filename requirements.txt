@@ -1,4 +1,7 @@
-scienceplots
+notebook
+jupyterlab
+jupyterhub
+pyvista[all]
+matplotlib
 scipy
-ipympl
-trame_jupyter_extension
+scienceplots

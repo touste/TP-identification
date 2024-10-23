@@ -1,12 +1,9 @@
-# Adapted from https://github.com/jorgensd/dolfinx-tutorial/blob/main/Dockerfile
-FROM ghcr.io/jorgensd/dolfinx-tutorial:release
-
-RUN apt-get install -y mesa-utils-extra libegl1 libgl1
+# Adapted from https://github.com/jorgensd/dolfinx-tutorial
+FROM ghcr.io/fenics/dolfinx/lab:v0.9.0
 
 # Install vtk for offscreen rendering
 RUN pip uninstall vtk -y
-#RUN pip install --no-cache-dir --extra-index-url https://wheels.vtk.org vtk-osmesa
-RUN pip install --no-cache-dir --extra-index-url https://wheels.vtk.org vtk-egl
+RUN pip install --no-cache-dir --extra-index-url https://wheels.vtk.org vtk-osmesa
 
 # Install other dependencies
 COPY requirements.txt /tmp/
