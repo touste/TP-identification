@@ -13,25 +13,18 @@
         }
     },
     "customizations": {
-        "extensions": [
-            "ms-python.python",
-            "ms-python.vscode-pylance",
-            "ms-toolsai.jupyter",
-            "ms-toolsai.jupyter-renderers",
-            "bierner.markdown-emoji"
-        ]
-    },
-    // Use base images default CMD.
-    "overrideCommand": false,
-    // Forward Jupyter port locally, mark required.
-    "forwardPorts": [
-        8888
-    ],
-    "portsAttributes": {
-        "8888": {
-            "label": "Jupyter",
-            "requireLocalPort": true,
-            "onAutoForward": "ignore"
+        "codespaces": {
+            "openFiles": [
+                "Identification.ipynb"
+            ]
+        },
+        "vscode": {
+            "extensions": [
+                "ms-python.python",
+                "ms-python.vscode-pylance",
+                "ms-toolsai.jupyter",
+                "ms-toolsai.jupyter-renderers"
+            ]
         }
     }
 }
