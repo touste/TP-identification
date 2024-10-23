@@ -1,0 +1,37 @@
+{
+    "name": "TP Identification",
+    "build": {
+        "dockerfile": "Dockerfile",
+        "context": ".."
+    },
+    // Features to add to the dev container. More info: https://containers.dev/features.
+    "features": {
+        "ghcr.io/devcontainers/features/common-utils:2": {
+            "username": "jovyan",
+            "userUid": "1000",
+            "userGid": "1000"
+        }
+    },
+    "customizations": {
+        "extensions": [
+            "ms-python.python",
+            "ms-python.vscode-pylance",
+            "ms-toolsai.jupyter",
+            "ms-toolsai.jupyter-renderers",
+            "bierner.markdown-emoji"
+        ]
+    },
+    // Use base images default CMD.
+    "overrideCommand": false,
+    // Forward Jupyter port locally, mark required.
+    "forwardPorts": [
+        8888
+    ],
+    "portsAttributes": {
+        "8888": {
+            "label": "Jupyter",
+            "requireLocalPort": true,
+            "onAutoForward": "ignore"
+        }
+    }
+}
