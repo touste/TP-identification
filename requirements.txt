@@ -1,7 +1,9 @@
 notebook
 jupyterlab
 jupyterhub
-pyvista[all]
+pyvista[jupyter]
+trame_jupyter_extension
 matplotlib
+ipympl
 scipy
 scienceplots
