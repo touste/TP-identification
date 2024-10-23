@@ -1,17 +1,18 @@
 # Adapted from https://github.com/jorgensd/dolfinx-tutorial
-FROM ghcr.io/fenics/dolfinx/lab:v0.9.0
+FROM ghcr.io/fenics/dolfinx/dolfinx:v0.9.0
 
 # Required for pyvista
-RUN apt-get update && apt-get install -y libgl1-mesa-dev libxrender1
+RUN apt-get update && apt-get install -y libosmesa6 && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install other dependencies
 COPY requirements.txt /tmp/
 RUN pip install --no-cache-dir -r /tmp/requirements.txt
 
-# Install vtk for offscreen rendering
-RUN pip uninstall vtk -y
+# Replace vtk with vtk-omesa
+RUN pip uninstall -y vtk
 RUN pip install --no-cache-dir --extra-index-url https://wheels.vtk.org vtk-osmesa
-
 
 # create user with a home directory
 ARG NB_USER=jovyan

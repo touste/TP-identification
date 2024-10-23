@@ -10,9 +10,6 @@
             "username": "jovyan",
             "userUid": "1000",
             "userGid": "1000"
-        },
-        "ghcr.io/devcontainers/features/python:1": {
-            "installJupyterlab": true
         }
     },
     "customizations": {
