@@ -2,16 +2,19 @@
 authors = ["Baptiste PIERRAT <pierrat@emse.fr>"]
 channels = ["conda-forge"]
 name = "tp-identification"
-platforms = ["linux-64"]
+platforms = [
+  "linux-64", 
+  { name = "linux-64-cluster", platform = "linux-64", glibc = "2.17" }
+]
 version = "0.1.0"
 
 [dependencies]
 python = ">=3.10"
 fenics-dolfinx = "==0.9.0"
-python-gmsh = "*"
-matplotlib = "*"
-scipy = "*"
-jupyterlab = "*"
+python-gmsh = ">=4.15.2,<5"
+matplotlib = ">=3.10.9,<4"
+scipy = ">=1.18.0,<2"
+jupyterlab = ">=4.6.1,<5"
 ipympl = ">=0.10.0,<0.11"
 k3d = ">=2.17.0,<3"
 notebook = ">=7.6.0,<8"
@@ -22,11 +25,9 @@ scienceplots = ">=2.2.2, <3"
 
 # --- Cluster Specific Configuration ---
 
-# 1. Define a feature for the cluster
 [feature.cluster]
-platforms = [{ platform = "linux-64", glibc = "2.17" }]
+platforms = ["linux-64-cluster"]
 
-# 2. Define the cluster environment that activates that feature
 [environments]
 cluster = ["cluster"]
 
