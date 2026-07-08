@@ -1,9 +1,0 @@
-notebook
-jupyterlab
-jupyterhub
-pyvista[jupyter]
-trame_jupyter_extension
-matplotlib
-ipympl
-scipy
-scienceplots

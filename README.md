@@ -1,31 +1,44 @@
-# Identification - Master BMED
+# Identification — Master BMED
 
-This repository contains the materials for the Identification course in the Master BMED program at Mines St Etienne.
+Material parameter identification lab for the Master BMED program at Mines Saint-Étienne.
 
-## Usage
+Students fit linear elastic, Neo-Hookean, and Fung constitutive models to
+experimental tensile-test data (rubber, aortic tissue), then perform inverse
+FEA-based identification on a plate-with-hole geometry validated against DIC
+strain fields.
 
-### Binder
+## Quick Start (local, recommended)
 
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/git/https%3A%2F%2Fgitlab.emse.fr%2Fpierrat%2Ftp-identification/master?labpath=Identification.ipynb)
+Install [pixi](https://pixi.sh), then:
 
-You can open the Notebook in Binder here, all dependencies are taken care of in the Dockerfile.
+```bash
+pixi install
+pixi run start
+```
 
->Note: it might take a while to build the first time, and Binder resources are limited.
+This launches JupyterLab with all dependencies (FEniCSx, PyVista, Trame,
+Gmsh, etc.) pre-configured via conda-forge.
 
+## Usage Options
 
-### Github Codespaces
+| Method | Command / Link |
+|--------|---------------|
+| **Pixi (local)** | `pixi install && pixi run start` |
+| **Binder** | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/git/https%3A%2F%2Fgitlab.emse.fr%2Fpierrat%2Ftp-identification/master?labpath=Identification.ipynb) |
+| **GitHub Codespaces** | [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/touste/TP-identification?quickstart=1) |
+| **VS Code Dev Container** | [![Open in Dev Containers](https://img.shields.io/static/v1?label=Dev%20Containers&message=Open&color=blue&logo=visualstudiocode)](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/touste/TP-identification) |
 
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/touste/TP-identification?quickstart=1)
+> **Note:** Binder builds can be slow the first time. For the best experience,
+> use pixi locally or GitHub Codespaces.
 
-You can open the repository in GitHub Codespaces.
+## Dependencies
 
->Note: you need to have a GitHub account and Codespaces enabled. Prefer opening the repository in JupyterLab for a better experience.
+Managed via [pixi](https://pixi.sh) (`pixi.toml` + `pixi.lock`).
+Key packages:
 
-### VS Code Dev Container
-
-[![Open in Dev Containers](https://img.shields.io/static/v1?label=Dev%20Containers&message=Open&color=blue&logo=visualstudiocode)](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/touste/TP-identification)
-
-Or you can open it on your machine in Visual Studio Code using Dev Containers. 
-
->Note: you need to have Docker and the Remote Containers extension installed.
+- [FEniCSx](https://fenicsproject.org/) (v0.11) — finite element solver
+- [PyVista](https://pyvista.org/) + [Trame](https://kitware.github.io/trame/) — interactive 3D visualisation
+- [Gmsh](https://gmsh.info/) — mesh generation
+- [SciPy](https://scipy.org/) — optimisation (`least_squares`)
+- [Matplotlib](https://matplotlib.org/) + [SciencePlots](https://github.com/garrettj403/SciencePlots) — publication-quality figures
 

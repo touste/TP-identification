@@ -45,4 +45,6 @@ dist/
 # Ignore IDE specific files
 .vscode/
 .idea/
-*.iml
+*.iml# pixi environments
+.pixi/
+!.pixi/config.toml
