@@ -20,13 +20,16 @@ RUN adduser --disabled-password \
     --uid ${NB_UID} \
     ${NB_USER}
 
-# Copy project files and install with pixi (lock file first for caching)
+# Copy project files and install with pixi
 WORKDIR ${HOME}
 COPY --chown=${NB_UID} pixi.toml pixi.lock ${HOME}/
 RUN pixi install
 
-# Copy source files (excluding .pixi, __pycache__, .git via .dockerignore)
+# Make pixi-managed binaries available in PATH for Binder/repo2docker
+ENV PATH="${HOME}/.pixi/envs/default/bin:${PATH}"
+
+# Copy source files
 COPY --chown=${NB_UID} . ${HOME}
 
 USER ${NB_USER}
-ENTRYPOINT ["pixi", "run", "start"]
+# No ENTRYPOINT — repo2docker sets CMD for JupyterHub
