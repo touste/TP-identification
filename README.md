@@ -13,11 +13,10 @@ Install [pixi](https://pixi.sh), then:
 
 ```bash
 pixi install
-pixi run start
+pixi run jupyter lab
 ```
 
-This launches JupyterLab with all dependencies (FEniCSx, PyVista, Trame,
-Gmsh, etc.) pre-configured via conda-forge.
+This launches JupyterLab with all dependencies (FEniCSx, Gmsh, K3D-jupyter etc.) pre-configured.
 
 ## Usage Options
 
@@ -30,15 +29,3 @@ Gmsh, etc.) pre-configured via conda-forge.
 
 > **Note:** Binder builds can be slow the first time. For the best experience,
 > use pixi locally or GitHub Codespaces.
-
-## Dependencies
-
-Managed via [pixi](https://pixi.sh) (`pixi.toml` + `pixi.lock`).
-Key packages:
-
-- [FEniCSx](https://fenicsproject.org/) (v0.11) — finite element solver
-- [PyVista](https://pyvista.org/) + [Trame](https://kitware.github.io/trame/) — interactive 3D visualisation
-- [Gmsh](https://gmsh.info/) — mesh generation
-- [SciPy](https://scipy.org/) — optimisation (`least_squares`)
-- [Matplotlib](https://matplotlib.org/) + [SciencePlots](https://github.com/garrettj403/SciencePlots) — publication-quality figures
-
