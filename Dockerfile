@@ -20,16 +20,22 @@ RUN adduser --disabled-password \
     --uid ${NB_UID} \
     ${NB_USER}
 
-# Copy project files and install with pixi
+# Copy project files
 WORKDIR ${HOME}
 COPY --chown=${NB_UID} pixi.toml pixi.lock ${HOME}/
+
+# Install as jovyan so .cache etc. are owned correctly
+USER ${NB_USER}
 RUN pixi install
 
-# Make pixi-managed binaries available in PATH for Binder/repo2docker
-ENV PATH="${HOME}/.pixi/envs/default/bin:${PATH}"
-
-# Copy source files
+# Back to root to copy remaining files
+USER root
 COPY --chown=${NB_UID} . ${HOME}
 
+# Make pixi-managed binaries available in PATH
+ENV PATH="${HOME}/.pixi/envs/default/bin:${PATH}"
+
 USER ${NB_USER}
-# No ENTRYPOINT — repo2docker sets CMD for JupyterHub
+
+# Shell entrypoint that execs Binder's CMD (e.g. jupyter notebook ...)
+ENTRYPOINT ["/bin/bash", "-c", "exec \"$@\"", "--"]
