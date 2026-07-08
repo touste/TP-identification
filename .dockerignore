@@ -1,0 +1,6 @@
+.pixi
+__pycache__
+.git
+.ipynb_checkpoints
+*.pyc
+.DS_Store

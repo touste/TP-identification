@@ -20,12 +20,12 @@ RUN adduser --disabled-password \
     --uid ${NB_UID} \
     ${NB_USER}
 
-# Copy project files and install with pixi
+# Copy project files and install with pixi (lock file first for caching)
 WORKDIR ${HOME}
 COPY --chown=${NB_UID} pixi.toml pixi.lock ${HOME}/
 RUN pixi install
 
-# Copy remaining files
+# Copy source files (excluding .pixi, __pycache__, .git via .dockerignore)
 COPY --chown=${NB_UID} . ${HOME}
 
 USER ${NB_USER}
