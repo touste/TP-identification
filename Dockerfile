@@ -1,9 +1,9 @@
 # Binder / JupyterHub Dockerfile using pixi for dependency management
 FROM ghcr.io/prefix-dev/pixi:latest
 
-# Install required system libs (osmesa for off-screen rendering)
+# Install required system libs + user management tools
 USER root
-RUN apt-get update && apt-get install -y libosmesa6 && \
+RUN apt-get update && apt-get install -y libosmesa6 adduser && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
